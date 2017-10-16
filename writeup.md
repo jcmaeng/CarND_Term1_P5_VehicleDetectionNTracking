@@ -10,8 +10,8 @@ The goals / steps of this project are the following:
 * Estimate a bounding box for vehicles detected.
 
 [//]: # (Image References)
-[image1]: ./examples/car_not_car.png
-[image2]: ./examples/HOG_example.jpg
+[image1]: ./output_images/f1_car_not_car.jpg
+[image2]: ./output_images/f2_hog_img.png
 [image3]: ./examples/sliding_windows.jpg
 [image4]: ./examples/sliding_window.jpg
 [image5]: ./examples/bboxes_and_heat.png
@@ -33,15 +33,15 @@ You're reading it!
 
 #### 1. Explain how (and identify where in your code) you extracted HOG features from the training images.
 
-The code for this step is contained in the first code cell of the IPython notebook (or in lines # through # of the file called `some_file.py`).  
-
-I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
+The main procedure is contained in the function named `detect_vehicles()` (from line 25 to 184 of `main.py`). 
+The code for extracting HOG features is contained in the first member function of `CarFinder` class in `car_finder.py`.  This function is `get_hog_features()` which returns HOG features of input images.
+Before extracting HOG features, I started by reading in all the `vehicle` and `non-vehicle` images.  Here is an example of one of each of the `vehicle` and `non-vehicle` classes:
 
 ![alt text][image1]
 
 I then explored different color spaces and different `skimage.hog()` parameters (`orientations`, `pixels_per_cell`, and `cells_per_block`).  I grabbed random images from each of the two classes and displayed them to get a feel for what the `skimage.hog()` output looks like.
 
-Here is an example using the `YCrCb` color space and HOG parameters of `orientations=8`, `pixels_per_cell=(8, 8)` and `cells_per_block=(2, 2)`:
+Here is an example using the `YCrCb` color space and HOG parameters of `orientations=11`, `pixels_per_cell=(16, 16)` and `cells_per_block=(2, 2)`:
 
 
 ![alt text][image2]
@@ -49,15 +49,18 @@ Here is an example using the `YCrCb` color space and HOG parameters of `orientat
 #### 2. Explain how you settled on your final choice of HOG parameters.
 
 I tried various combinations of parameters to extract appropriate HOG features from image.
-This table shows the parameters which I had finally chosen.
+This table shows the parameters which I had finally chosen and tested values.
 
-| Parameter Name| Value     | Comment|
+| Parameter Name| Value     | Tested values|
 |:--------------------|------------|:--------------|
-|orientations        | 11         |                  |
-|pix_per_cell         | 16        | pixels per cell |
-|cell_per_block     |  2           | cell per block |
+|orientations        | 11         |  9, 11, 12, 16  |
+|pix_per_cell         | (16, 16)    | 16, 32 |
+|cell_per_block     |  (2, 2)        | 1, 2 |
 |hog_channel      |  ALL         | 0, 1, 2, or 'ALL' |
-|
+
+I chose these parameter values by lots of experiments. I run this algorithm with each parameter values and check the result image repeatedly.
+
+
 ####3 . Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
 I trained a linear SVM using extracted features which are HOG features for all channels, spatial and color features.
