@@ -11,13 +11,11 @@ The goals / steps of this project are the following:
 
 [//]: # (Image References)
 [image1]: ./output_images/f1_car_not_car.jpg
-[image2]: ./output_images/f2_hog_img.png
-[image3]: ./examples/sliding_windows.jpg
-[image4]: ./examples/sliding_window.jpg
-[image5]: ./examples/bboxes_and_heat.png
-[image6]: ./examples/labels_map.png
-[image7]: ./examples/output_bboxes.png
-[video1]: ./project_video.mp4
+[image2]: ./output_images/f2_car_hog_img.png
+[image3]: ./output_images/f3_hog_subsampling.png
+[image4]: ./output_images/f4_heatmap.png
+[image5]: ./output_images/f5_remove_false_positives.png
+[video1]: ./out_project_p5.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
 ### Here I will consider the rubric points individually and describe how I addressed each point in my implementation.  
@@ -61,15 +59,17 @@ This table shows the parameters which I had finally chosen and tested values.
 I chose these parameter values by lots of experiments. I run this algorithm with each parameter values and check the result image repeatedly.
 
 
-####3 . Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
+#### 3 . Describe how (and identify where in your code) you trained a classifier using your selected HOG features (and color features if you used them).
 
-I trained a linear SVM using extracted features which are HOG features for all channels, spatial and color features.
+I trained a linear SVC using extracted features which are HOG features for all channels, spatial and color features. The code for this step is contained in the `detect_vehicles()` (from line 78 to 111). After extracting features to need from those images, then stacking whole feature data for training with `np.vstack()` and make label data with `np.hstack()`. I normalized with `sklearn.preprocessing.StandardScaler` and split up data into randomized training and test sets. (the ratio of test set is 20%)
+
+The classifier is trained with parameter C=0.0001, where this value was selected based on the accuracies of train and test set. After some training, the training accuracy was always high, so the C was lowered because it meant overfitting. The final accuracy obtained on the test set was 98.41%. The classifier and the scaler were saved using pickle, so they can be reused whenever the camera images coming to process.
 
 ### Sliding Window Search
 
 #### 1. Describe how (and identify where in your code) you implemented a sliding window search.  How did you decide what scales to search and how much to overlap windows?
 
-I decided to search random window positions at random scales all over the image and came up with this (ok just kidding I didn't actually ;):
+I tried to use the sliding window search directly but it did not show good result. So I applied HOG subsampling window search method from the lesson 35. :) After dozens and hundreds of test, I decided to apply scales of 1.0 and 1.5. Too many scales were not useful to me. As you can see the code in the line 130 of `main.py`, `find_cars()` function of `CarFinder` was invoked for each scale and obtained position list of cars.  
 
 ![alt text][image3]
 
@@ -77,7 +77,11 @@ I decided to search random window positions at random scales all over the image 
 
 Ultimately I searched on two scales using YCrCb 3-channel HOG features plus spatially binned color and histograms of color in the feature vector, which provided a nice result.  Here are some example images:
 
+Heatmap from HOG sub-sampling image
 ![alt text][image4]
+
+Image after removing false positives
+![alt text][image5]
 ---
 
 ### Video Implementation
@@ -89,20 +93,9 @@ Here's a [link to my video result](./output_images/out_project_p5.mp4)
 #### 2. Describe how (and identify where in your code) you implemented some kind of filter for false positives and some method for combining overlapping bounding boxes.
 
 I recorded the positions of positive detections in each frame of the video.  From the positive detections I created a heatmap and then thresholded that map to identify vehicle positions.  I then used `scipy.ndimage.measurements.label()` to identify individual blobs in the heatmap.  I then assumed each blob corresponded to a vehicle.  I constructed bounding boxes to cover the area of each blob detected.  
+I accumulated 5 images before applying threshold to take better results.
 
-Here's an example result showing the heatmap from a series of frames of video, the result of `scipy.ndimage.measurements.label()` and the bounding boxes then overlaid on the last frame of video:
-
-### Here are six frames and their corresponding heatmaps:
-
-![alt text][image5]
-
-### Here is the output of `scipy.ndimage.measurements.label()` on the integrated heatmap from all six frames:
-![alt text][image6]
-
-### Here the resulting bounding boxes are drawn onto the last frame in the series:
-![alt text][image7]
-
-
+I didn't take capture images from video. I will update some more example images.
 
 ---
 
@@ -110,5 +103,5 @@ Here's an example result showing the heatmap from a series of frames of video, t
 
 #### 1. Briefly discuss any problems / issues you faced in your implementation of this project.  Where will your pipeline likely fail?  What could you do to make it more robust?
 
-Here I'll talk about the approach I took, what techniques I used, what worked and why, where the pipeline might fail and how I might improve it if I were going to pursue this project further.  
+I spent so many times to tune the parameters. And I failed to eliminate false positives especially on the guardrail and shadows. I think that the brightness adjustment may be useful to that case. I will try that.
 
