@@ -16,7 +16,7 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/f3_hog_subsampling.jpg
 [image4]: ./output_images/f4_heatmap.jpg
 [image5]: ./output_images/f5_remove_false_positives.jpg
-[image6]: ./output_images/f6_spatial_hist_features.png
+[image6]: ./output_images/f6_features.png
 [video1]: ./out_project_p5.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
@@ -87,6 +87,8 @@ Image after removing false positives
 
 Spatial and color histogram features
 ![alt text][image6]
+
+For the performance aspent, I have to choose the LinearSVC. I tried to use the other classifier, there are so many times to training and tesing. And to speed up the searching process, I decided to use `pix_per_cell=16`. This value is very useful to me to reduce the whole processing time.
 
 ---
 
