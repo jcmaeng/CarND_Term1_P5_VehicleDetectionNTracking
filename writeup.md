@@ -1,4 +1,5 @@
-**Vehicle Detection Project**
+# **Vehicle Detection Project**
+
 
 The goals / steps of this project are the following:
 
@@ -12,9 +13,9 @@ The goals / steps of this project are the following:
 [//]: # (Image References)
 [image1]: ./output_images/f1_car_not_car.jpg
 [image2]: ./output_images/f2_car_hog_img.png
-[image3]: ./output_images/f3_hog_subsampling.png
-[image4]: ./output_images/f4_heatmap.png
-[image5]: ./output_images/f5_remove_false_positives.png
+[image3]: ./output_images/f3_hog_subsampling.jpg
+[image4]: ./output_images/f4_heatmap.jpg
+[image5]: ./output_images/f5_remove_false_positives.jpg
 [video1]: ./out_project_p5.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
