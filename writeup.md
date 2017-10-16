@@ -16,6 +16,7 @@ The goals / steps of this project are the following:
 [image3]: ./output_images/f3_hog_subsampling.jpg
 [image4]: ./output_images/f4_heatmap.jpg
 [image5]: ./output_images/f5_remove_false_positives.jpg
+[image6]: ./output_images/f6_spatial_hist_features.png
 [video1]: ./out_project_p5.mp4
 
 ## [Rubric](https://review.udacity.com/#!/rubrics/513/view) Points
@@ -83,6 +84,10 @@ Heatmap from HOG sub-sampling image
 
 Image after removing false positives
 ![alt text][image5]
+
+Spatial and color histogram features
+![alt text][image6]
+
 ---
 
 ### Video Implementation
