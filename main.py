@@ -3,7 +3,7 @@ import glob
 import pickle
 import collections
 
-# from lane_finder import *
+from lane_finder import *
 from car_finder import *
 
 # Import everything needed to edit/save/watch video clips
@@ -16,25 +16,25 @@ SAVED_SCALER = 'trained_scaler.p'
 
 save_step_results = False
 view_results = False
-heatmaps = collections.deque(maxlen=4)
+heatmaps = collections.deque(maxlen=5)
 
 # class DriveEnvFinder:
 #     def __init__(self):
 #         pass
 
 def detect_vehicles(image):
-    # lanefinder = LaneFinder()
+    lanefinder = LaneLineFinder()
     carfinder = CarFinder()
 
     # initialize constants
-    scale = 1.5
+    scale_list = [1., 1.5]
     color_space = 'YCrCb'
-    orient = 9  # HOG orientations
-    pix_per_cell = 8 # HOG pixels per cell
+    orient = 11 # HOG orientations
+    pix_per_cell = 16 # HOG pixels per cell
     cell_per_block = 2 # HOG cells per block
     hog_channel = "ALL" # Can be 0, 1, 2, or "ALL"
-    spatial_size = (16, 16) # Spatial binning dimensions
-    hist_bins = 16    # Number of histogram bins
+    spatial_size = (32, 32) # Spatial binning dimensions
+    hist_bins = 32    # Number of histogram bins
     spatial_feat = True # Spatial features on or off
     hist_feat = True # Histogram features on or off
     hog_feat = True # HOG features on or off
@@ -45,8 +45,9 @@ def detect_vehicles(image):
     ystop_1 = y_start_stop[1]
     ystart_2 = ystart_0
     ystop_2 = y_start_stop[1]
-    ystarts = [ystart_1, ystart_2]
-    ystops = [ystop_1-100, ystop_2]
+    ystarts = [ystart_0, ystart_1]#, ystart_2]
+    ystops = [ystop_0, ystop_1-100]#, ystop_2]
+    window_list = [(80,80), (96,96), (112,112), (128,128), (160,160)]
 
     if not os.access(SAVED_SVC, os.F_OK) and not os.access(SAVED_SCALER, os.F_OK):
         # Read in cars and notcars
@@ -97,7 +98,7 @@ def detect_vehicles(image):
 
 
         # Use a linear SVC 
-        svc = LinearSVC(C=0.00001)
+        svc = LinearSVC(C=0.0001)
         # Check the training time for the SVC
         t=time.time()
         svc.fit(X_train, y_train)
@@ -126,22 +127,37 @@ def detect_vehicles(image):
 
     ### Find cars
     # print("Find Cars")
-    scale_list = [1.5, 2.0]
+
     bbox_list = []
     for scale, ystart, ystop, in zip(scale_list, ystarts, ystops):
-        boxes = carfinder.find_cars(image, ystart, ystop, scale, svc, X_scaler, orient,
+        hot_windows = carfinder.find_cars(image, ystart, ystop, scale, svc, X_scaler, orient,
                                     pix_per_cell, cell_per_block, spatial_size, hist_bins)
 
-        bbox_list.extend(boxes)
+    # for winsize, ystart, ystop, in zip(window_list, ystarts, ystops):
+        # windows = carfinder.slide_window(image, x_start_stop=[None, None], y_start_stop=[ystart,ystop], 
+        #                     xy_window=winsize, xy_overlap=(0.7, 0.7))
+
+        # hot_windows = carfinder.search_windows(image, windows, svc, X_scaler, color_space=color_space, 
+        #                         spatial_size=spatial_size, hist_bins=hist_bins, 
+        #                         orient=orient, pix_per_cell=pix_per_cell, 
+        #                         cell_per_block=cell_per_block, 
+        #                         hog_channel=hog_channel, spatial_feat=spatial_feat, 
+        #                         hist_feat=hist_feat, hog_feat=hog_feat)                       
+
+
+        bbox_list.extend(hot_windows)
 
     img_cars_pos = image.copy()
     for b in bbox_list:
-        cv2.rectangle(img_cars_pos, b[0], b[1], (0,0,255), 5)
+         cv2.rectangle(img_cars_pos, b[0], b[1], (0,0,255), 5)
+
+    ### Find lane lines and display it
+    l_image = image.copy()
+    lane_image = lanefinder.process_image(l_image)
 
     ### Make heatmap and remove false positives
     # print("Make heatmap and remove false positives")
-    result_image, heatmap = carfinder.get_heatmap_and_boxed_image(image, bbox_list, heatmaps)
-
+    result_image, heatmap = carfinder.get_heatmap_and_boxed_image(lane_image, bbox_list, heatmaps)
 
 
     # Save result images of each step to files
@@ -150,8 +166,6 @@ def detect_vehicles(image):
         mpimg.imsave(output_dir + "/" + "find_cars_by_hog_subsampling.jpg", img_cars_pos, format='jpg')
         mpimg.imsave(output_dir + "/" + "remove_false_positives.jpg", result_image, format='jpg')
         mpimg.imsave(output_dir + "/" + "heatmap.jpg", heatmap, format='jpg')
-
-
 
 
     if view_results is True:
@@ -175,8 +189,8 @@ if __name__ == '__main__':
 
     # detect_vehicles(image)
 
-    video = './test_video.mp4'
-    new_clip_output = './output_images/out_test_cars_finding_only.mp4'
+    video = './project_video.mp4'
+    new_clip_output = './output_images/out_project_p5.mp4'
 
     test_clip = VideoFileClip(video, audio=False)
     new_clip = test_clip.fl_image(detect_vehicles)

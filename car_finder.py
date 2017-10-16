@@ -108,6 +108,7 @@ class CarFinder:
                 # Append the new feature vector to the features list
                 file_features.append(hog_features)
             features.append(np.concatenate(file_features))
+
         # Return list of feature vectors
         return features
         
@@ -172,7 +173,7 @@ class CarFinder:
             #3) Extract the test window from original image
             test_img = cv2.resize(img[window[0][1]:window[1][1], window[0][0]:window[1][0]], (64, 64))      
             #4) Extract features for that window using single_img_features()
-            features = single_img_features(test_img, color_space=color_space, 
+            features = self.single_img_features(test_img, color_space=color_space, 
                                 spatial_size=spatial_size, hist_bins=hist_bins, 
                                 orient=orient, pix_per_cell=pix_per_cell, 
                                 cell_per_block=cell_per_block, 
@@ -187,6 +188,43 @@ class CarFinder:
                 on_windows.append(window)
         #8) Return windows for positive detections
         return on_windows
+
+    # This function is very similar to extract_features()
+    # just for a single image rather than list of images
+    def single_img_features(self, img, color_space='RGB', spatial_size=(32, 32),
+                            hist_bins=32, orient=9, 
+                            pix_per_cell=8, cell_per_block=2, hog_channel=0,
+                            spatial_feat=True, hist_feat=True, hog_feat=True):    
+        #1) Define an empty list to receive features
+        img_features = []
+        #2) Apply color conversion if other than 'RGB'
+        feature_image = self.convert_color(img, color_space)
+        #3) Compute spatial features if flag is set
+        if spatial_feat == True:
+            spatial_features = self.bin_spatial(feature_image, size=spatial_size)
+            #4) Append features to list
+            img_features.append(spatial_features)
+        #5) Compute histogram features if flag is set
+        if hist_feat == True:
+            hist_features = self.color_hist(feature_image, nbins=hist_bins)
+            #6) Append features to list
+            img_features.append(hist_features)
+        #7) Compute HOG features if flag is set
+        if hog_feat == True:
+            if hog_channel == 'ALL':
+                hog_features = []
+                for channel in range(feature_image.shape[2]):
+                    hog_features.extend(self.get_hog_features(feature_image[:,:,channel], 
+                                        orient, pix_per_cell, cell_per_block, 
+                                        vis=False, feature_vec=True))      
+            else:
+                hog_features = self.get_hog_features(feature_image[:,:,hog_channel], orient, 
+                            pix_per_cell, cell_per_block, vis=False, feature_vec=True)
+            #8) Append features to list
+            img_features.append(hog_features)
+
+        #9) Return concatenated array of features
+        return np.concatenate(img_features)
 
     # Define a function to draw bounding boxes
     def draw_boxes(self, img, bboxes, color=(0, 0, 255), thick=6):
@@ -246,10 +284,11 @@ class CarFinder:
 
         heatmaps.append(heatmap)
         weights = [0.1, 0.2, 0.3, 0.4]
-        for h, w, i in zip(heatmaps, weights, range(3)):
-            heatmaps[i] = h * w
-        heatmap = sum(heatmaps)
-        heatmap = self.apply_threshold(heatmap, sum(weights[:3])*2)
+        if len(heatmaps) == 5:
+            for h, w, i in zip(heatmaps, weights, range(len(heatmaps))):
+                heatmaps[i] = h * w
+            heatmap = sum(heatmaps)
+        heatmap = self.apply_threshold(heatmap, sum(weights)*4)
 
         # Find final boxes from heatmap using label function
         labels = label(heatmap)
@@ -270,11 +309,13 @@ class CarFinder:
     def find_cars(self, img, ystart, ystop, scale, svc, X_scaler, orient, pix_per_cell, cell_per_block, spatial_size, hist_bins):
         
         draw_img = np.copy(img)
+        img = self.convert_color(img, 'YUV')
+        img[:,:,0] = cv2.equalizeHist(img[:,:,0])
+        img = cv2.cvtColor(img, cv2.COLOR_YUV2RGB)
         img = img.astype(np.float32)/255
         
         img_tosearch = img[ystart:ystop,:,:]
         ctrans_tosearch = self.convert_color(img_tosearch, 'YCrCb')
-
         matched_boxs = []
         if scale != 1:
             imshape = ctrans_tosearch.shape
@@ -301,7 +342,7 @@ class CarFinder:
         hog2 = self.get_hog_features(ch2, orient, pix_per_cell, cell_per_block, feature_vec=False)
         hog3 = self.get_hog_features(ch3, orient, pix_per_cell, cell_per_block, feature_vec=False)
         
-    
+        decisions = []
         for xb in range(nxsteps):
             for yb in range(nysteps):
                 ypos = yb*cells_per_step
@@ -324,10 +365,12 @@ class CarFinder:
 
                 # Scale features and make a prediction
                 test_features = X_scaler.transform(np.hstack((spatial_features, hist_features, hog_features)).reshape(1, -1))    
-                #test_features = X_scaler.transform(np.hstack((shape_feat, hist_feat)).reshape(1, -1))
-                # test_decision = svc.decision_function(test_features)   
+                decision = svc.decision_function(test_features)
                 test_prediction = svc.predict(test_features)
-                
+
+                if decision[0] < 0.2:
+                    continue
+
                 if test_prediction == 1:
                     xbox_left = np.int(xleft*scale)
                     ytop_draw = np.int(ytop*scale)

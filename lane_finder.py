@@ -366,6 +366,7 @@ class LaneLineFinder():
         limg = cv2.cvtColor(limg, cv2.COLOR_YUV2RGB)
 
         limg_undist = self.cal_undistort(limg, self.objp, self.imgp)
+        img_undist = self.cal_undistort(img, self.objp, self.imgp)
 
         # cv2.imshow('undistorted lane image', limg_undist)
         # cv2.waitKey()
@@ -436,7 +437,7 @@ class LaneLineFinder():
         l_curverad, r_curverad = self.calculate_curvature()
 
         #### draw lane line to image
-        result = self.draw_lane_to_img(limg_undist, warped)
+        result = self.draw_lane_to_img(img_undist, warped)
 
         #### add info strings to the result image
         curverad = (l_curverad + r_curverad) / 2
@@ -496,12 +497,13 @@ class LaneLineFinder():
 
         return result
 
-proc = LaneLineFinder()
-# proc.process_image(proc.lane_img)
-lane_video = './project_video.mp4'
-# lane_video = './challenge_video.mp4'
-new_clip_output = './output_images/out_project.mp4'
+if __name__ == '__main__':
+    proc = LaneLineFinder()
+    # proc.process_image(proc.lane_img)
+    lane_video = './project_video.mp4'
+    # lane_video = './challenge_video.mp4'
+    new_clip_output = './output_images/out_project.mp4'
 
-test_clip = VideoFileClip(lane_video, audio=False)
-new_clip = test_clip.fl_image(proc.process_image)
-new_clip.write_videofile(new_clip_output, audio=False)
+    test_clip = VideoFileClip(lane_video, audio=False)
+    new_clip = test_clip.fl_image(proc.process_image)
+    new_clip.write_videofile(new_clip_output, audio=False)
